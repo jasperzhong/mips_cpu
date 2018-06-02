@@ -37,7 +37,7 @@ module Regfiles(
     assign rdata1 = array_reg[raddr1];
     assign rdata2 = array_reg[raddr2];
     
-    always @(posedge clk or posedge rst) begin
+    always @(negedge clk or posedge rst) begin
         if(rst) begin
             array_reg[0] <= 32'b0; array_reg[16] <= 32'b0; 
             array_reg[1] <= 32'b0; array_reg[17] <= 32'b0; 
