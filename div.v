@@ -42,7 +42,7 @@ module Div(
     assign temp = r_sign?reg_r + reg_b:reg_r;
     assign r = dividend[31] == 1 && divisor[31] == 0 ? ~temp+1'b1:temp;
     assign q = dividend[31]+divisor[31] == 0 ||dividend[31]+divisor[31] == 2? reg_q: ~reg_q+1'b1;
-    always @(posedge clock or posedge reset) begin
+    always @(negedge clock or posedge reset) begin
         if(reset) begin
             count <= 0;
             busy <= 0;

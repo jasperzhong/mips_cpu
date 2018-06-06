@@ -40,7 +40,7 @@ module Divu(
     wire[32:0] sub_add = r_sign?({reg_r,q[31]} + {1'b0, reg_b}):({reg_r,q[31]} - {1'b0, reg_b});
     assign r = r_sign?reg_r + reg_b:reg_r;
     assign q = reg_q;
-    always @(posedge clock or posedge reset) begin
+    always @(negedge clock or posedge reset) begin
         if(reset) begin
             count <= 0;
             busy <= 0;

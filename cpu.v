@@ -38,6 +38,7 @@ module CPU(
    wire [31:0] dmem_addra;
    wire [31:0] dmem_dina;
    wire [31:0] dmem_douta;
+  
       
    /*PC*/
    wire pc_ena;
@@ -214,6 +215,11 @@ module CPU(
    wire [31:0] clz_in;
    wire [31:0] clz_out;
    
+   wire [2:0] switch;
+   wire DM_byte;
+   wire DM_half;
+   wire DM_word;
+   
    assign exception = SYSCALL||BREAK||(TEQ&&zero);
    assign cause = SYSCALL?32'b100000:BREAK?32'b100100:TEQ?32'b110100:32'b0;
   
@@ -295,8 +301,11 @@ module CPU(
    assign dmem_ena = LW || SW || LB || LBU || LHU || SB || SH || LH;
    assign dmem_wea = SW || SB || SH;
    assign dmem_addra = r;
-   assign dmem_dina = SW?rf_rdata2:SH?{rf_rdata2[15:0], 16'b0}:SB?{rf_rdata2[7:0], 24'b0}:32'bz;
-   
+   assign dmem_dina = rf_rdata2;
+   assign DM_byte = SB || LB || LBU;
+   assign DM_half = SH || LH || LHU;
+   assign DM_word = SW || LW;
+   assign switch = {DM_byte, DM_half, DM_word};
    
    /* hi/lo */
    assign hi_we = DIVU || DIV || MULTU || MTHI;
@@ -308,8 +317,9 @@ module CPU(
    assign lo_wdata_mux[0] = DIV || MTLO;
    assign lo_wdata_mux[1] = MULTU || MTLO;
    
-   
-   
+   /* clz */
+   assign clz_in = rf_rdata1;   
+           
    Mux4_1 m1(
         .iData1(pc_idata1),
         .iData2(pc_idata2),
@@ -341,19 +351,19 @@ module CPU(
         .iData1(rf_wdata_idata1),
         .iData2(rf_wdata_idata2), 
         .iData3(rf_wdata_idata3), 
-        .idata4(rf_wdata_idata4),
-        .idata5(rf_wdata_idata5),
-        .idata6(rf_wdata_idata6),
-        .idata7(rf_wdata_idata7),
-        .idata8(rf_wdata_idata8),
-        .idata9(rf_wdata_idata9),
-        .idata10(rf_wdata_idata10),
-        .idata11(rf_wdata_idata11),
-        .idata12(rf_wdata_idata12),      
-        .idata13(0),
-        .idata14(0),
-        .idata15(0),
-        .idata16(0),  
+        .iData4(rf_wdata_idata4),
+        .iData5(rf_wdata_idata5),
+        .iData6(rf_wdata_idata6),
+        .iData7(rf_wdata_idata7),
+        .iData8(rf_wdata_idata8),
+        .iData9(rf_wdata_idata9),
+        .iData10(rf_wdata_idata10),
+        .iData11(rf_wdata_idata11),
+        .iData12(rf_wdata_idata12),      
+        .iData13(0),
+        .iData14(0),
+        .iData15(0),
+        .iData16(0),  
         .sel(rf_wdata_mux),
         .oData(rf_wdata)
    );
@@ -370,7 +380,7 @@ module CPU(
    Mux4_1 m6(
         .iData1(divu_r),
         .iData2(div_r),
-        .iData3(multu[63:32]),
+        .iData3(multu_z[63:32]),
         .iData4(rf_rdata1), //rs
         .sel(hi_wdata_mux),
         .oData(hi_data_in)
@@ -379,7 +389,7 @@ module CPU(
    Mux4_1 m7(
        .iData1(divu_q),
        .iData2(div_q),
-       .iData3(multu[31:0]),
+       .iData3(multu_z[31:0]),
        .iData4(rf_rdata1), //rs
        .sel(lo_wdata_mux),
        .oData(lo_data_in)
@@ -412,12 +422,14 @@ module CPU(
         .spo(instruction)
    );
    
-   DMEM dmem(
+   Ram dram(
         .clk(~clk),
+        .ena(dmem_ena),
+        .addr(dmem_addra-32'h10010000),
+        .switch(switch),
+        .data_in(dmem_dina),
         .we(dmem_wea),
-        .a(dmem_addra),
-        .d(dmem_dina),
-        .spo(dmem_douta)
+        .data_out(dmem_douta)
    );
    
    PCReg pcreg(
@@ -458,7 +470,7 @@ module CPU(
         .mtc0(MTC0),
         .eret(ERET),
         .exception(exception),
-        .addr(rf_waddr),   //addr_rd
+        .addr(rf_waddr_idata1),  //rd
         .data(rf_rdata2),  //data_rt
         .pc(imem_addra),
         .cause(cause),
@@ -475,16 +487,16 @@ module CPU(
    Mul mul(
         .clk(clk),
         .rst(rst),
-        .a(mul_a),
-        .b(mul_b),
+        .a(rf_rdata1),
+        .b(rf_rdata2),
         .z(mul_z)
    );
    
    Multu multu(
         .clk(clk),
-        .rst(rst),
-        .a(multu_a),
-        .b(multu_b),
+        .rst(~rst),
+        .a(rf_rdata1),
+        .b(rf_rdata2),
         .z(multu_z)
    );   
    

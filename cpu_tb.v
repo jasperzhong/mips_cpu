@@ -40,7 +40,7 @@ module cpu_tb();
     end
     
     
-    always #1 clk=~clk;
+    always #0.5 clk=~clk;
     always @(posedge clk) begin
             counter = counter + 1;
             $fdisplay(file_output, "pc: %h", pc);
