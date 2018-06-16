@@ -49,7 +49,6 @@ module ALU(
         4'b1110:begin r = b << a; zero = (r==0); carry = b[31-a+1]; negative = r[31]; end
         4'b1111:begin r = b << a; zero = (r==0); carry = b[31-a+1]; negative = r[31]; end
         4'b1101:begin r = b >> a; zero = (r==0); carry = b[a-1]; negative = r[31]; end
-        default: ;
         endcase
     end
     

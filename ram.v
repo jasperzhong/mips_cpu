@@ -29,7 +29,7 @@ module Ram(
       input we,
       output [31:0]data_out //存储器读出的数据，
 );
-    reg [7:0]ram[560-1:0];
+    reg [7:0]ram[1024-1:0];
     assign data_out=ena?(switch==3'b100)?{24'b0,ram[addr]}:(switch==3'b010)?{16'b0,ram[addr],ram[addr+1]}:(switch==3'b001)?{ram[addr],ram[addr+1],ram[addr+2],ram[addr+3]}:32'bz:32'bz;
     always@(posedge clk)
         if(ena)

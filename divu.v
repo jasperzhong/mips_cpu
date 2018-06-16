@@ -32,32 +32,29 @@ module Divu(
     );
     wire ready;
     reg[4:0] count;
-    reg[31:0] reg_q;
-    reg[31:0] reg_r;
-    reg[31:0] reg_b;
-    reg busy2, r_sign;
-    assign ready = ~busy & busy2;
-    wire[32:0] sub_add = r_sign?({reg_r,q[31]} + {1'b0, reg_b}):({reg_r,q[31]} - {1'b0, reg_b});
-    assign r = r_sign?reg_r + reg_b:reg_r;
-    assign q = reg_q;
+    reg[31:0] tmp_q;
+    reg[31:0] tmp_r;
+    reg[31:0] tmp_b;
+    reg tmp_sign;
+    wire[32:0] sub_add = tmp_sign?({tmp_r,q[31]} + {1'b0, tmp_b}):({tmp_r,q[31]} - {1'b0, tmp_b});
+    assign r = tmp_sign?tmp_r + tmp_b:tmp_r;
+    assign q = tmp_q;
     always @(negedge clock or posedge reset) begin
         if(reset) begin
             count <= 0;
             busy <= 0;
-            busy2 <= 0;
         end else begin
-            busy2 <= busy;
             if(start) begin
-                reg_r <= 0;
-                r_sign <= 0;
-                reg_q <= dividend;
-                reg_b <= divisor;
+                tmp_r <= 0;
+                tmp_sign <= 0;
+                tmp_q <= dividend;
+                tmp_b <= divisor;
                 count <= 0;
                 busy <= 1;
             end else if(busy) begin
-                reg_r <= sub_add[31:0];
-                r_sign <= sub_add[32];
-                reg_q <= {reg_q[30:0],~sub_add[32]};
+                tmp_r <= sub_add[31:0];
+                tmp_sign <= sub_add[32];
+                tmp_q <= {tmp_q[30:0],~sub_add[32]};
                 count <= count + 1;
                 if(count == 31) busy <= 0;
             end

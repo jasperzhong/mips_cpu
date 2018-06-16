@@ -23,26 +23,31 @@
 module CPU(
     input clk,
     input rst,
-    output [31:0] inst,
+    input [31:0] instruction,
+    input [31:0] rdata,
     output [31:0] pc,
-    output [31:0] addr
+    output [31:0] addr,
+    output [31:0] wdata, 
+    output DM_CS,
+    output DM_W,
+    output DM_R,
+    output [2:0] switch
     );
     
    /*IMEM*/
    wire [31:0] imem_addra;
-   wire [31:0] instruction;
    
    /*DMEM*/
    wire dmem_ena;
    wire dmem_wea;
    wire [31:0] dmem_addra;
    wire [31:0] dmem_dina;
-   wire [31:0] dmem_douta;
   
       
    /*PC*/
    wire pc_ena;
    wire [31:0] pc_data_in;
+   wire [31:0] exc_addr = 32'h00400004;
    
    /*ALU*/
    wire [31:0] alu_a;
@@ -148,7 +153,7 @@ module CPU(
    wire s_ext_s;
    wire [1:0] alu_a_mux;
    wire [1:0] alu_b_mux;
-   wire [1:0] pc_mux;
+   wire [2:0] pc_mux;
    wire [3:0] rf_wdata_mux;
    wire [1:0] rf_waddr_mux;
    
@@ -156,6 +161,8 @@ module CPU(
    wire [31:0] pc_idata2;
    wire [31:0] pc_idata3;
    wire [31:0] pc_idata4;
+   wire [31:0] pc_idata5;
+   wire [31:0] pc_idata6;
    wire [31:0] pc_odata;
    
    wire [4:0] ext5_idata;
@@ -215,7 +222,7 @@ module CPU(
    wire [31:0] clz_in;
    wire [31:0] clz_out;
    
-   wire [2:0] switch;
+
    wire DM_byte;
    wire DM_half;
    wire DM_word;
@@ -230,13 +237,16 @@ module CPU(
    /* pc */
    assign pc_ena = 1;
    
-   assign pc_mux[0] = JR || J || JAL || JALR || ERET;
+   assign pc_mux[0] = JR || J || JAL || JALR || SYSCALL || BREAK || TEQ&&zero;
    assign pc_mux[1] = BEQ || BNE || J || JAL || BGEZ;
+   assign pc_mux[2] = ERET || SYSCALL || BREAK || TEQ&&zero;
       
    assign pc_idata1 = imem_addra + 4;     //pc+4
-   assign pc_idata2 = ERET?epc_out:rf_rdata1; // rs OR epc_out
+   assign pc_idata2 = rf_rdata1; // rs 
    assign pc_idata3 = (r==0 && BEQ || r != 0 && BNE || r==0 && BGEZ)?imem_addra + 4 + ext18_odata:imem_addra + 4; // npc+offset
    assign pc_idata4 = ii_odata; //pc||index||0^2
+   assign pc_idata5 = epc_out;
+   assign pc_idata6 = exc_addr;
    
    /* alu */
    assign alu_a_mux[0] = SLL || SRL || SRA;
@@ -253,9 +263,9 @@ module CPU(
    assign alu_b_idata2 = ext16_odata; 
    assign alu_b_idata3 = 0; //bgez
    
-   assign aluc[0] = SUB || SUBU || OR || NOR || SLT || SRL || SRLV || ORI || BEQ || BNE || SLTI || BGEZ;
+   assign aluc[0] = SUB || SUBU || OR || NOR || SLT || SRL || SRLV || ORI || BEQ || BNE || SLTI || BGEZ || TEQ;
    assign aluc[1] = ADD || SUB || XOR || NOR || SLT || SLTU || SLL || SLLV || ADDI || XORI || LW || SW || BEQ || BNE || SLTI || SLTIU
-                 || LB || LBU || LHU || SB || SH || LH || BGEZ;
+                 || LB || LBU || LHU || SB || SH || LH || BGEZ || TEQ;
    assign aluc[2] = AND || OR || XOR || NOR || SLL || SRL || SRA || SLLV || SRLV || SRAV || ANDI || ORI || XORI;
    assign aluc[3] = SLT || SLTU || SLL || SRL || SRA || SLLV || SRLV || SRAV || SLTI || SLTIU || LUI || BGEZ;
    
@@ -280,17 +290,17 @@ module CPU(
    assign rf_wdata_mux[3] = LB || LBU || LHU || LH;
    
    assign rf_wdata_idata1 = r;
-   assign rf_wdata_idata2 = dmem_douta;
+   assign rf_wdata_idata2 = rdata;
    assign rf_wdata_idata3 = imem_addra+4;
    assign rf_wdata_idata4 = clz_out;
    assign rf_wdata_idata5 = mul_z[31:0];
    assign rf_wdata_idata6 = CP0_out;
    assign rf_wdata_idata7 = hi_data_out;
    assign rf_wdata_idata8 = lo_data_out;
-   assign rf_wdata_idata9 = {{25{dmem_douta[7]}}, dmem_douta[6:0]};
-   assign rf_wdata_idata10 = {24'b0, dmem_douta[7:0]};
-   assign rf_wdata_idata11 = {16'b0, dmem_douta[15:0]};
-   assign rf_wdata_idata12 = {{17{dmem_douta[15]}}, dmem_douta[14:0]};
+   assign rf_wdata_idata9 = {{25{rdata[7]}}, rdata[6:0]};
+   assign rf_wdata_idata10 = {24'b0, rdata[7:0]};
+   assign rf_wdata_idata11 = {16'b0, rdata[15:0]};
+   assign rf_wdata_idata12 = {{17{rdata[15]}}, rdata[14:0]};
    
    
    assign s_ext_s = ADDI || ADDIU || LW || SW || BEQ || BNE || SLTI || SLTIU || LUI ||
@@ -320,11 +330,15 @@ module CPU(
    /* clz */
    assign clz_in = rf_rdata1;   
            
-   Mux4_1 m1(
+   Mux8_1 m1(
         .iData1(pc_idata1),
         .iData2(pc_idata2),
         .iData3(pc_idata3),
         .iData4(pc_idata4),
+        .iData5(pc_idata5),
+        .iData6(pc_idata6),
+        .iData7(0),
+        .iData8(0),
         .sel(pc_mux),
         .oData(pc_data_in)
    );
@@ -416,26 +430,11 @@ module CPU(
         .index(instruction[25:0]),
         .addr(ii_odata)
    );
-   
-   IMEM imem(
-        .a((imem_addra-32'h00400000)/4),
-        .spo(instruction)
-   );
-   
-   Ram dram(
-        .clk(~clk),
-        .ena(dmem_ena),
-        .addr(dmem_addra-32'h10010000),
-        .switch(switch),
-        .data_in(dmem_dina),
-        .we(dmem_wea),
-        .data_out(dmem_douta)
-   );
-   
+
    PCReg pcreg(
         .clk(clk),
         .rst(rst),
-        .ena(pc_ena),
+        .ena(pc_ena && !div_busy && !divu_busy),
         .data_in(pc_data_in),
         .data_out(imem_addra)
    );
@@ -485,25 +484,21 @@ module CPU(
    );
    
    Mul mul(
-        .clk(clk),
-        .rst(rst),
         .a(rf_rdata1),
         .b(rf_rdata2),
         .z(mul_z)
    );
    
    Multu multu(
-        .clk(clk),
-        .rst(~rst),
         .a(rf_rdata1),
         .b(rf_rdata2),
         .z(multu_z)
    );   
    
    Div div(
-        .dividend(div_dividend),
-        .divisor(div_divisor),
-        .start(DIV),
+        .dividend(rf_rdata1),
+        .divisor(rf_rdata2),
+        .start(DIV&~div_busy),
         .clock(clk),
         .reset(rst),
         .q(div_q),
@@ -512,9 +507,9 @@ module CPU(
    );
    
    Divu divu(
-       .dividend(divu_dividend),
-       .divisor(divu_divisor),
-       .start(DIVU),
+       .dividend(rf_rdata1),
+       .divisor(rf_rdata2),
+       .start(DIVU&~divu_busy),
        .clock(clk),
        .reset(rst),
        .q(divu_q),
@@ -538,8 +533,11 @@ module CPU(
        .data_in(lo_data_in),
        .data_out(lo_data_out)
    );
-      
-   assign inst = instruction;
+    
    assign pc = imem_addra;
    assign addr = dmem_addra;
+   assign wdata = dmem_dina;
+   assign DM_CS = dmem_ena;
+   assign DM_W = dmem_wea;
+   assign DM_R = !dmem_wea;
 endmodule
