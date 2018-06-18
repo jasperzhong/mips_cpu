@@ -347,7 +347,7 @@ module CPU(
         .iData1(alu_a_idata1),
         .iData2(alu_a_idata2),
         .iData3(alu_a_idata3),
-        .iData4(alu_a_idata3),
+        .iData4(0),
         .sel(alu_a_mux),
         .oData(alu_a)
    );

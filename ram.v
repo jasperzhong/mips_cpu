@@ -29,28 +29,22 @@ module Ram(
       input we,
       output [31:0]data_out //存储器读出的数据，
 );
-    reg [7:0]ram[1024-1:0];
-    assign data_out=ena?(switch==3'b100)?{24'b0,ram[addr]}:(switch==3'b010)?{16'b0,ram[addr],ram[addr+1]}:(switch==3'b001)?{ram[addr],ram[addr+1],ram[addr+2],ram[addr+3]}:32'bz:32'bz;
+
+    reg [31:0] ram [1023:0];
+    
+    assign data_out = ena?((switch==3'b100)?{24'b0,ram[addr][7:0]}:
+                          (switch==3'b010)?{16'b0,ram[addr][15:0]}:
+                          (switch==3'b001)?{ram[addr]}:32'bz):32'bz;
+                          
     always@(posedge clk)
-        if(ena)
-            begin
-            if(we)
-            begin
+        if(ena) begin
+            if(we) begin
                 if(switch==3'b100)
-                    ram[addr]<=data_in[7:0];
+                    ram[addr][7:0] = data_in[7:0];
                 else if(switch==3'b010)
-                    begin
-                    ram[addr]<=data_in[15:8];
-                    ram[addr+1]<=data_in[7:0];
-                    end
+                    ram[addr][15:0] = data_in[15:0];
                 else if(switch==3'b001)
-                    begin
-                    ram[addr]<=data_in[31:24];
-                    ram[addr+1]<=data_in[23:16];
-                    ram[addr+2]<=data_in[15:8];
-                    ram[addr+3]<=data_in[7:0];
-                    end
-                else;
+                    ram[addr] = data_in;
             end
         end
 endmodule

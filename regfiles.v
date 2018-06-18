@@ -5,7 +5,7 @@
 // 
 // Create Date: 2018/04/26 23:24:31
 // Design Name: 
-// Module Name: array_reg
+// Module Name: array
 // Project Name: 
 // Target Devices: 
 // Tool Versions: 
@@ -32,32 +32,33 @@ module Regfiles(
     output [31:0] rdata2
     );
     
-    reg [31:0] array_reg [31:0];
+    (* ram_style = "block" *)
+    reg [31:0] array [31:0];
     
-    assign rdata1 = array_reg[raddr1];
-    assign rdata2 = array_reg[raddr2];
+    assign rdata1 = array[raddr1];
+    assign rdata2 = array[raddr2];
     
     always @(negedge clk or posedge rst) begin
         if(rst) begin
-            array_reg[0] <= 32'b0; array_reg[16] <= 32'b0; 
-            array_reg[1] <= 32'b0; array_reg[17] <= 32'b0; 
-            array_reg[2] <= 32'b0; array_reg[18] <= 32'b0; 
-            array_reg[3] <= 32'b0; array_reg[19] <= 32'b0; 
-            array_reg[4] <= 32'b0; array_reg[20] <= 32'b0; 
-            array_reg[5] <= 32'b0; array_reg[21] <= 32'b0; 
-            array_reg[6] <= 32'b0; array_reg[22] <= 32'b0; 
-            array_reg[7] <= 32'b0; array_reg[23] <= 32'b0; 
-            array_reg[8] <= 32'b0; array_reg[24] <= 32'b0; 
-            array_reg[9] <= 32'b0; array_reg[25] <= 32'b0; 
-            array_reg[10] <= 32'b0; array_reg[26] <= 32'b0; 
-            array_reg[11] <= 32'b0; array_reg[27] <= 32'b0; 
-            array_reg[12] <= 32'b0; array_reg[28] <= 32'b0; 
-            array_reg[13] <= 32'b0; array_reg[29] <= 32'b0; 
-            array_reg[14] <= 32'b0; array_reg[30] <= 32'b0; 
-            array_reg[15] <= 32'b0; array_reg[31] <= 32'b0;             
+            array[0] <= 32'b0; array[16] <= 32'b0; 
+            array[1] <= 32'b0; array[17] <= 32'b0; 
+            array[2] <= 32'b0; array[18] <= 32'b0; 
+            array[3] <= 32'b0; array[19] <= 32'b0; 
+            array[4] <= 32'b0; array[20] <= 32'b0; 
+            array[5] <= 32'b0; array[21] <= 32'b0; 
+            array[6] <= 32'b0; array[22] <= 32'b0; 
+            array[7] <= 32'b0; array[23] <= 32'b0; 
+            array[8] <= 32'b0; array[24] <= 32'b0; 
+            array[9] <= 32'b0; array[25] <= 32'b0; 
+            array[10] <= 32'b0; array[26] <= 32'b0; 
+            array[11] <= 32'b0; array[27] <= 32'b0; 
+            array[12] <= 32'b0; array[28] <= 32'b0; 
+            array[13] <= 32'b0; array[29] <= 32'b0; 
+            array[14] <= 32'b0; array[30] <= 32'b0; 
+            array[15] <= 32'b0; array[31] <= 32'b0;             
         end
         else if(we == 1 && waddr != 5'b00000) // reg 0 is always zero
-            array_reg[waddr] <= wdata;
+            array[waddr] <= wdata;
         else ;
     end
     
