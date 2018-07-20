@@ -27,14 +27,14 @@ module seg7x16(
 	 output [7:0] o_sel
     );
 
-    reg [14:0] cnt;
+    reg [13:0] cnt;
 	 always @ (posedge clk, posedge reset)
       if (reset)
         cnt <= 0;
       else
         cnt <= cnt + 1'b1;
  
-    wire seg7_clk = cnt[14]; 
+    wire seg7_clk = cnt[13]; 
 	 
 	 reg [2:0] seg7_addr;
 	 

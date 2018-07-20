@@ -43,7 +43,6 @@ module CPU(
    wire [31:0] dmem_addra;
    wire [31:0] dmem_dina;
   
-      
    /*PC*/
    wire pc_ena;
    wire [31:0] pc_data_in;

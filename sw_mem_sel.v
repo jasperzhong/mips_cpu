@@ -19,11 +19,14 @@
 //
 //////////////////////////////////////////////////////////////////////////////////
 module sw_mem_sel(
-    input switch_cs,
+     input switch_cs,
+     input keyboard_cs,
 	 input [15:0] sw,
+	 input [7:0] kb_data,
 	 input [31:0] data,
 	 output [31:0] data_sel
     );
 
-    assign data_sel = (switch_cs) ? {16'b0, sw[15:0]} : data;
+    assign data_sel = (switch_cs) ? {16'b0, sw[15:0]} :
+                     (keyboard_cs)? {24'b0, kb_data}: data;
 endmodule

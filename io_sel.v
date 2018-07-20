@@ -23,10 +23,13 @@ module io_sel(
 	 input cs,
 	 input sig_w,
 	 input sig_r,
+	 input kb_ready,
 	 output seg7_cs,
-	 output switch_cs
+	 output switch_cs,
+	 output keyboard_cs
     );
 
-assign seg7_cs = (addr == 32'h10010000 && cs == 1 && sig_w == 1) ? 1 : 0;
-assign switch_cs = (addr == 32'h10010010 && cs == 1 && sig_r == 1) ? 1 : 0;
+    assign seg7_cs = (addr == 32'h10010000 && cs == 1 && sig_w == 1) ? 1 : 0;
+    assign switch_cs = (addr == 32'h10010010 && cs == 1 && sig_r == 1) ? 1 : 0;
+    assign keyboard_cs = (addr == 32'h00000030 && cs == 1 && sig_r == 1 && kb_ready == 1) ? 1 : 0;
 endmodule
