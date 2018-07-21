@@ -104,7 +104,22 @@ loop1:
     j loop1
 
 is_prime:
-    sw $20, 0($11)  # show the hex 
-   
+    sw $20, 0($11)  # show x
+    addi $21, $0, 2  # i = 2
+loop2:
+    slt $23, $21, $20 # if(i < x)
+    beq $23, $0, true
+    div $20, $21
+    mfhi $23   # r
+    addi $21, $21, 1   # i++
+    bne $23, $0, loop2  # if(r == 0) break else continue
 
+    addi $22, $0, 0xf
+    j end
+    
+true:
+    addi $22, $0, 1
+    
+end:
+    sw $22, 0($11)
     
