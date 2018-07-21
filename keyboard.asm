@@ -91,7 +91,20 @@ num_end:
 
 
 input_over:
-    addi $22, $0, 0xffff
-    sw $22, 0($11)     #  cout << a
+    addi $21, $0, 1
+    addi $20, $0, 0
+    addi $25, $0, 10
+loop1:
+    beq $22, $0, is_prime
+    andi $23, $22, 0xf   # the last 
+    srl $22, $22, 4
+    mul $23, $23, $21 
+    add $20, $20, $23
+    mul $21, $21, $25
+    j loop1
 
+is_prime:
+    sw $20, 0($11)  # show the hex 
+   
 
+    
