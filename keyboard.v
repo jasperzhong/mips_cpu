@@ -30,35 +30,33 @@ module Keyboard(
     output reg kb_ready
     );
     
+    reg isBreak;
     reg [3:0] cnt;
-    reg [7:0] data_cur;
-    reg [7:0] data_pre;
+    reg [10:0] datacur;
     
-    always @(negedge kclk) begin
-        case (cnt)
-            1: ;
-            2: data_cur[0] <= kdata;
-            3: data_cur[1] <= kdata;
-            4: data_cur[2] <= kdata;
-            5: data_cur[3] <= kdata;
-            6: data_cur[4] <= kdata;
-            7: data_cur[5] <= kdata;
-            8: data_cur[6] <= kdata;
-            9: data_cur[7] <= kdata;
-            10:kb_ready <= 1'b1;
-            11:kb_ready <= 1'b0;
-        endcase
-        
-        if(cnt <= 10)
-            cnt <= cnt + 4'h1;
-        else
-            cnt <= 4'h1;
-    end
-    
-    always @(posedge kb_ready) begin
-        if(data_cur == 8'hf0) 
-            kb_data <= data_pre;
-        else
-            data_pre <= data_cur;
+    always @ (negedge kclk or posedge rst) begin
+        if(rst) begin
+            kb_data = 0;
+            cnt = 0;
+            isBreak = 0;
+            kb_ready = 1'b0;
+        end
+        else 
+        if(isBreak == 1'b1) begin
+            datacur[cnt] = kdata;
+            cnt = cnt + 1;
+            if(cnt == 11) cnt = 0;
+            if(cnt == 0) begin
+                kb_data = datacur[8:1];
+                kb_ready = 1'b1;
+                isBreak = 0;
+            end
+        end
+        else begin
+            datacur[cnt] = kdata;
+            cnt = cnt + 1;
+            if(cnt == 11) cnt = 0;
+            if (datacur[8:1] == 8'hF0) isBreak = 1;
+        end
     end
 endmodule
